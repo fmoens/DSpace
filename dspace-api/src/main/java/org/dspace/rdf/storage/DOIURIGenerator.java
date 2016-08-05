@@ -18,6 +18,7 @@ import org.dspace.identifier.factory.IdentifierServiceFactory;
 import org.dspace.identifier.service.DOIService;
 
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,35 +36,27 @@ implements URIGenerator
      * will be used to generate an URI, whenever no DOI was found.
      */
     protected final static URIGenerator fallback = new LocalURIGenerator();
-    protected final DOIService doiService = IdentifierServiceFactory.getInstance().getDOIService();
+    private final DOIService doiService = IdentifierServiceFactory.getInstance().getDOIService();
+
+    private static final List<Integer> ALLOWED_CONSTANTS = Arrays.asList(Constants.SITE, Constants.COMMUNITY, Constants.COLLECTION, Constants.ITEM);
     
     @Override
     public String generateIdentifier(Context context, int type, UUID id, String handle, List<String> identifiers) throws SQLException {
-        if (type != Constants.SITE
-                && type != Constants.COMMUNITY
-                && type != Constants.COLLECTION
-                && type != Constants.ITEM)
-        {
+        if (!ALLOWED_CONSTANTS.contains(type)) {
             return null;
         }
-
-        String doi = null;
         for (String identifier : identifiers)
         {
             try
             {
-                doi = doiService.DOIToExternalForm(identifier);
+                return doiService.DOIToExternalForm(identifier);
             } catch (IdentifierException ex) {
                 // identifier is not a DOI: no problem, keep on looking.
             }
         }
-        if (doi != null) {
-            return doi;
-        } else {
-            log.info("Didn't find a DOI for " + Constants.typeText[type] + ", id " + id.toString()
-                    + ", will use fallback URIGenerator.");
-            return fallback.generateIdentifier(context, type, id, handle, identifiers);
-        }
+        log.info("Didn't find a DOI for " + Constants.typeText[type] + ", id " + id.toString()
+                + ", will use fallback URIGenerator.");
+        return fallback.generateIdentifier(context, type, id, handle, identifiers);
     }
 
     @Override

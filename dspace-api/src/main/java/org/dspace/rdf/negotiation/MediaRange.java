@@ -74,14 +74,17 @@ public class MediaRange
     protected final List<String> parameterValues;
     
 
+    // Why not just remove this constructor instead of throwing an Exception?
     private MediaRange() {
         throw new RuntimeException("Default constructor of MediaRange must "
                 + "not be called. Use static methods instead.");
     }
-    
+
+    // Method is too long, split it up
     public MediaRange(String mediarange)
             throws IllegalArgumentException, IllegalStateException
     {
+        // Make this a constant
         Pattern mediaRangePattern = Pattern.compile("^" + mediaRangeRegex + "$");
 
         Matcher rangeMatcher = mediaRangePattern.matcher(mediarange.trim());

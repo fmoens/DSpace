@@ -15,6 +15,9 @@ import com.hp.hpl.jena.util.FileUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.dspace.content.DSpaceObject;
 import org.dspace.content.factory.ContentServiceFactory;
@@ -34,6 +37,8 @@ implements ConverterPlugin
     
     public static final String CONSTANT_DATA_FILENAME_KEY_PREFIX = "rdf.constant.data.";
     public static final String CONSTANT_DATA_GENERAL_KEY_SUFFIX = "GENERAL";
+
+    private static final List<Integer> SUPPORTED = Arrays.asList(Constants.COLLECTION, Constants.COMMUNITY, Constants.ITEM, Constants.SITE);
 
     protected ConfigurationService configurationService;
     
@@ -114,20 +119,11 @@ implements ConverterPlugin
     }
     
     @Override
+    // Put this method in an abstract class and have the classes now implmenting ConverterPlugin extend it
+    // Add a method on the interface called something like getSuppprtedDSpaceObjects and implement this method in
+    // all subclasses.
     public boolean supports(int type)
     {
-        switch (type)
-        {
-            case (Constants.COLLECTION) :
-                return true;
-            case (Constants.COMMUNITY) :
-                return true;
-            case (Constants.ITEM) :
-                return true;
-            case (Constants.SITE) :
-                return true;
-            default :
-                return false;
-        }
+        return SUPPORTED.contains(type);
     }
 }

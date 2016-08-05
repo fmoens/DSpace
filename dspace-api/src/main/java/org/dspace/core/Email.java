@@ -104,22 +104,22 @@ import org.dspace.services.factory.DSpaceServicesFactory;
 public class Email
 {
     /** The content of the message */
-    private String content;
+    private String content = "";
 
     /** The subject of the message */
-    private String subject;
+    private String subject = "";
 
     /** The arguments to fill out */
-    private List<Object> arguments;
+    private List<Object> arguments = new ArrayList<>(50);
 
     /** The recipients */
-    private List<String> recipients;
+    private List<String> recipients = new ArrayList<>(50);
 
     /** Reply to field, if any */
     private String replyTo;
 
-    private List<FileAttachment> attachments;
-    private List<InputStreamAttachment> moreAttachments;
+    private List<FileAttachment> attachments = new ArrayList<>(10);
+    private List<InputStreamAttachment> moreAttachments =  new ArrayList<>(10);
 
     /** The character set this message will be sent in */
     private String charset;
@@ -129,17 +129,7 @@ public class Email
     /**
      * Create a new email message.
      */
-    public Email()
-    {
-        arguments = new ArrayList<Object>(50);
-        recipients = new ArrayList<String>(50);
-        attachments = new ArrayList<FileAttachment>(10);
-        moreAttachments = new ArrayList<InputStreamAttachment>(10);
-        subject = "";
-        content = "";
-        replyTo = null;
-        charset = null;
-    }
+    public Email() {}
 
     /**
      * Add a recipient
@@ -163,7 +153,7 @@ public class Email
     public void setContent(String cnt)
     {
         content = cnt;
-        arguments = new ArrayList<Object>();
+        arguments = new ArrayList<>();
     }
 
     /**
@@ -219,10 +209,10 @@ public class Email
      */
     public void reset()
     {
-        arguments = new ArrayList<Object>(50);
-        recipients = new ArrayList<String>(50);
-        attachments = new ArrayList<FileAttachment>(10);
-        moreAttachments = new ArrayList<InputStreamAttachment>(10);
+        arguments = new ArrayList<>(50);
+        recipients = new ArrayList<>(50);
+        attachments = new ArrayList<>(10);
+        moreAttachments = new ArrayList<>(10);
         replyTo = null;
         charset = null;
     }
@@ -412,6 +402,7 @@ public class Email
             }
         } finally
         {
+            // Close streams as in LicenseServiceImpl or use AutoCloseable
             if (reader != null)
             {
                 try {
@@ -492,19 +483,19 @@ public class Email
         }
         catch (MessagingException me)
         {
-            System.err.println("\nError sending email:");
-            System.err.println(" - Error: " + me);
-            System.err.println("\nPlease see the DSpace documentation for assistance.\n");
-            System.err.println("\n");
-            System.exit(1);
+            logMailSendingError(me);
         }catch (IOException e1) {
-        	System.err.println("\nError sending email:");
-            System.err.println(" - Error: " + e1);
-            System.err.println("\nPlease see the DSpace documentation for assistance.\n");
-            System.err.println("\n");
-            System.exit(1);
+            logMailSendingError(e1);
         }
         System.out.println("\nEmail sent successfully!\n");
+    }
+
+    private static void logMailSendingError(Exception e) {
+        System.err.println("\nError sending email:");
+        System.err.println(" - Error: " + e);
+        System.err.println("\nPlease see the DSpace documentation for assistance.\n");
+        System.err.println("\n");
+        System.exit(1);
     }
 
     /**

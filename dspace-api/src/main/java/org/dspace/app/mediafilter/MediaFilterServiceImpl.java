@@ -8,6 +8,7 @@
 package org.dspace.app.mediafilter;
 
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.*;
 
 import org.dspace.app.mediafilter.service.MediaFilterService;
@@ -81,6 +82,7 @@ public class MediaFilterServiceImpl implements MediaFilterService, InitializingB
     public void afterPropertiesSet() throws Exception {
         String[] publicPermissionFilters = configurationService.getArrayProperty("filter.org.dspace.app.mediafilter.publicPermission");
 
+        // Docs for getArrayProperty say: "If property is not found, an empty array is returned.", so null check is not needed
         if(publicPermissionFilters != null) {
             for(String filter : publicPermissionFilters) {
                 publicFiltersClasses.add(filter.trim());
@@ -186,6 +188,8 @@ public class MediaFilterServiceImpl implements MediaFilterService, InitializingB
     public boolean filterBitstream(Context context, Item myItem,
             Bitstream myBitstream) throws Exception
     {
+        // Method is too big/complex
+        // Deepest nesting of logic is something like: for - if - if - try -if
     	boolean filtered = false;
     	
     	// iterate through filter classes. A single format may be actioned
@@ -226,6 +230,8 @@ public class MediaFilterServiceImpl implements MediaFilterService, InitializingB
                     int assetstore = myBitstream.getStoreNumber();
 
                     // Printout helpful information to find the errored bitstream.
+                    // Use Logger instead of System.out.println? Some app servers do not redirect standard out / standard error to logging file
+                    // There are other System.out.println's in this file
                     System.out.println("ERROR filtering, skipping bitstream:\n");
                     System.out.println("\tItem Handle: " + handle);
                     for (Bundle bundle : bundles) {
@@ -241,42 +247,11 @@ public class MediaFilterServiceImpl implements MediaFilterService, InitializingB
                 // Filter implements self registration, so check to see if it should be applied
                 // given the formats it claims to support
                 SelfRegisterInputFormats srif = (SelfRegisterInputFormats) filterClass;
-                boolean applyFilter = false;
 
-                // Check MIME type
-                String[] mimeTypes = srif.getInputMIMETypes();
-                if (mimeTypes != null) {
-                    for (String mimeType : mimeTypes) {
-                        if (mimeType.equalsIgnoreCase(myBitstream.getFormat(context).getMIMEType())) {
-                            applyFilter = true;
-                        }
-                    }
-                }
-
-                // Check description
-                if (!applyFilter) {
-                    String[] descriptions = srif.getInputDescriptions();
-                    if (descriptions != null) {
-                        for (String desc : descriptions) {
-                            if (desc.equalsIgnoreCase(myBitstream.getFormat(context).getShortDescription())) {
-                                applyFilter = true;
-                            }
-                        }
-                    }
-                }
-
-                // Check extensions
-                if (!applyFilter) {
-                    String[] extensions = srif.getInputExtensions();
-                    if (extensions != null) {
-                        for (String ext : extensions) {
-                            List<String> formatExtensions = myBitstream.getFormat(context).getExtensions();
-                            if (formatExtensions != null && formatExtensions.contains(ext)) {
-                                applyFilter = true;
-                            }
-                        }
-                    }
-                }
+                // Check whether a Filter needs to be applied
+                boolean applyFilter = mimeTypeFilter(context, myBitstream, srif) ||
+                        formatShortDescriptionFilter(context, myBitstream, srif) ||
+                        formatExtensionsFilter(context, myBitstream, srif);
 
                 // Filter claims to handle this type of file, so attempt to apply it
                 if (applyFilter) {
@@ -288,6 +263,7 @@ public class MediaFilterServiceImpl implements MediaFilterService, InitializingB
                             filtered = true;
                         }
                     } catch (Exception e) {
+                        // Use Logger instead of System.out.println? Some app servers do not redirect standard out / standard error to logging file
                         System.out.println("ERROR filtering, skipping bitstream #"
                                 + myBitstream.getID() + " " + e);
                         e.printStackTrace();
@@ -297,11 +273,49 @@ public class MediaFilterServiceImpl implements MediaFilterService, InitializingB
         }
         return filtered;
     }
-    
+
+    private boolean formatExtensionsFilter(Context context, Bitstream myBitstream, SelfRegisterInputFormats srif) throws SQLException {
+        String[] extensions = srif.getInputExtensions();
+        if (extensions != null) {
+            for (String ext : extensions) {
+                List<String> formatExtensions = myBitstream.getFormat(context).getExtensions();
+                if (formatExtensions != null && formatExtensions.contains(ext)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean formatShortDescriptionFilter(Context context, Bitstream myBitstream, SelfRegisterInputFormats srif) throws SQLException {
+        String[] descriptions = srif.getInputDescriptions();
+        if (descriptions != null) {
+            for (String desc : descriptions) {
+                if (desc.equalsIgnoreCase(myBitstream.getFormat(context).getShortDescription())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean mimeTypeFilter(Context context, Bitstream myBitstream, SelfRegisterInputFormats srif) throws SQLException {
+        String[] mimeTypes = srif.getInputMIMETypes();
+        if (mimeTypes != null) {
+            for (String mimeType : mimeTypes) {
+                if (mimeType.equalsIgnoreCase(myBitstream.getFormat(context).getMIMEType())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public boolean processBitstream(Context context, Item item, Bitstream source, FormatFilter formatFilter)
             throws Exception
     {
+        // Method is too long
         //do pre-processing of this bitstream, and if it fails, skip this bitstream!
     	if(!formatFilter.preProcessBitstream(context, item, source, isVerbose))
         {
@@ -319,7 +333,7 @@ public class MediaFilterServiceImpl implements MediaFilterService, InitializingB
         List<Bundle> bundles = itemService.getBundles(item, formatFilter.getBundleName());
 
         // check if destination bitstream exists
-        if (bundles.size() > 0)
+        if (!bundles.isEmpty())
         {
             // only finds the last match (FIXME?)
             for (Bundle bundle : bundles) {
@@ -327,6 +341,7 @@ public class MediaFilterServiceImpl implements MediaFilterService, InitializingB
 
                 for (Bitstream bitstream : bitstreams) {
                     if (bitstream.getName().equals(newName)) {
+                        // Usage of and assignment to targetBundle has no purpose here: it is overwritten later and not used here
                         targetBundle = bundle;
                         existingBitstream = bitstream;
                     }
@@ -369,7 +384,7 @@ public class MediaFilterServiceImpl implements MediaFilterService, InitializingB
         }
 
         // create new bundle if needed
-        if (bundles.size() < 1)
+        if (bundles.isEmpty())
         {
             targetBundle = bundleService.create(context, item, formatFilter.getBundleName());
         }

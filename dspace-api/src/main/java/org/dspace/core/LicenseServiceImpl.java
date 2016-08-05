@@ -8,15 +8,7 @@
 
 package org.dspace.core;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 
 import org.dspace.core.service.LicenseService;
 import org.dspace.services.factory.DSpaceServicesFactory;
@@ -35,25 +27,31 @@ public class LicenseServiceImpl implements LicenseService
     /** The default license */
     protected String license;
 
-    protected LicenseServiceImpl()
-    {
-
-    }
+    protected LicenseServiceImpl() {}
 
     @Override
     public void writeLicenseFile(String licenseFile,
-            String newLicense)
+                                 String newLicense)
     {
+        // 1. Duplicate code to write to a file: same as in org/dspace/core/NewsServiceImpl.java
+        // 2. AutoCloseables (Java 7) could be used here
+        FileOutputStream fos = null;
+        OutputStreamWriter osr = null;
+        PrintWriter out = null;
         try
         {
-            FileOutputStream fos = new FileOutputStream(licenseFile);
-            OutputStreamWriter osr = new OutputStreamWriter(fos, "UTF-8");
-            PrintWriter out = new PrintWriter(osr);
+            fos = new FileOutputStream(licenseFile);
+            osr = new OutputStreamWriter(fos, "UTF-8");
+            out = new PrintWriter(osr);
             out.print(newLicense);
-            out.close();
+            // Only out was being closed, osr and fos weren't, in contrast with the closing in for instance getLicenseText
+            // where all streams / writers are being closed.
+            // out.close();
         } catch (IOException e)
         {
             log.warn("license_write: " + e.getLocalizedMessage());
+        } finally {
+            closeStreams(out, osr, fos);
         }
         license = newLicense;
     }
@@ -61,6 +59,7 @@ public class LicenseServiceImpl implements LicenseService
     @Override
     public String getLicenseText(String licenseFile)
     {
+        // AutoCloseables could be used here
         InputStream is = null;
         InputStreamReader ir = null;
         BufferedReader br = null;
@@ -81,34 +80,7 @@ public class LicenseServiceImpl implements LicenseService
             throw new IllegalStateException("Failed to read default license.", e);
         } finally
         {
-            if (br != null)
-            {
-                try
-                {
-                    br.close();
-                } catch (IOException ioe)
-                {
-                }
-            }
-            if (ir != null)
-            {
-                try
-                {
-                    ir.close();
-                }
-                catch (IOException ioe)
-                {
-                }
-            }
-            if (is != null)
-            {
-                try
-                {
-                    is.close();
-                } catch (IOException ioe)
-                {
-                }
-            }
+            closeStreams(br, ir, is);
         }
         return license;
     }
@@ -136,6 +108,7 @@ public class LicenseServiceImpl implements LicenseService
         File licenseFile = new File(DSpaceServicesFactory.getInstance().getConfigurationService().getProperty("dspace.dir")
                 + File.separator + "config" + File.separator + "default.license");
 
+        // AutoCloseables could be used here
         FileInputStream  fir = null;
         InputStreamReader ir = null;
         BufferedReader br = null;
@@ -152,7 +125,7 @@ public class LicenseServiceImpl implements LicenseService
             {
                 license = license + lineIn + '\n';
             }
-
+            // Why is this here? All streams and readers are being closed in the finally block
             br.close();
 
         }
@@ -167,38 +140,22 @@ public class LicenseServiceImpl implements LicenseService
         }
         finally
         {
-            if (br != null)
-            {
-                try
-                {
-                    br.close();
-                }
-                catch (IOException ioe)
-                {
-                }
-            }
+            closeStreams(br, ir, fir);
+        }
+    }
 
-            if (ir != null)
-            {
-                try
-                {
-                    ir.close();
-                }
-                catch (IOException ioe)
-                {
-                }
+    private void closeStream(Closeable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (IOException ioe) {
             }
+        }
+    }
 
-            if (fir != null)
-            {
-                try
-                {
-                    fir.close();
-                }
-                catch (IOException ioe)
-                {
-                }
-            }
+    private void closeStreams(Closeable ...closeables) {
+        for (Closeable closeable : closeables) {
+            closeStream(closeable);
         }
     }
 }

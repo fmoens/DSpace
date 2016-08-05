@@ -15,13 +15,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.dspace.app.util.Util;
 import org.dspace.content.*;
+import org.dspace.content.Collection;
 import org.dspace.content.factory.ContentServiceFactory;
 import org.dspace.content.service.BitstreamService;
 import org.dspace.content.service.CommunityService;
@@ -51,7 +51,7 @@ implements ConverterPlugin
     public static final String SIMPLE_RELATIONS_ITEM2COLLECTION_KEY = "rdf.simplerelations.item2collection";
     public static final String SIMPLE_RELATIONS_ITEM2BITSTREAM_KEY = "rdf.simplerelations.item2bitstream";
 
-    
+
     private static final Logger log = Logger.getLogger(SimpleDSORelationsConverterPlugin.class);
     protected ConfigurationService configurationService;
     
@@ -70,6 +70,10 @@ implements ConverterPlugin
     protected CommunityService communityService = ContentServiceFactory.getInstance().getCommunityService();
     protected SiteService siteService = ContentServiceFactory.getInstance().getSiteService();
 
+    private static final String LOAD_WARNING_HEADER = "SimpleDSORelationsConverterPlugin was unable to load configuration to convert relation between ";
+
+    private static final List<Integer> SUPPORTED = Arrays.asList(Constants.COLLECTION, Constants.COMMUNITY, Constants.ITEM, Constants.SITE);
+
     public SimpleDSORelationsConverterPlugin()
     {
         site2community = RDFConfiguration.loadConfigurationArray(SIMPLE_RELATIONS_SITE2COMMUNITY_KEY);
@@ -82,60 +86,19 @@ implements ConverterPlugin
         item2collection = RDFConfiguration.loadConfigurationArray(SIMPLE_RELATIONS_ITEM2COLLECTION_KEY);
         item2bitstream = RDFConfiguration.loadConfigurationArray(SIMPLE_RELATIONS_ITEM2BITSTREAM_KEY);
         
-        if (site2community == null)
-        {
-            log.warn("SimpleDSORelationsConverterPlugin was unable to load "
-                    + "configuration to convert relation between the repository "
-                    + "the repository (SITE) and the top communities.");
-        }
-        if (community2site == null)
-        {
-            log.warn("SimpleDSORelationsConverterPlugin was unable to load "
-                    + "configuration to convert relation between "
-                    + "the top communities and the repository (SITE).");
-        }
-        if (community2subcommunity == null)
-        {
-            log.warn("SimpleDSORelationsConverterPlugin was unable to load "
-                    + "configuration to convert relation between "
-                    + "communities and subcommunities.");
-        }
-        if (subcommunity2community == null)
-        {
-            log.warn("SimpleDSORelationsConverterPlugin was unable to load "
-                    + "configuration to convert relation between "
-                    + "subcommunities and communities.");
-        }
-        if (community2collection == null)
-        {
-            log.warn("SimpleDSORelationsConverterPlugin was unable to load "
-                    + "configuration to convert relation between "
-                    + "communities and collections.");
-        }
-        if (collection2community == null)
-        {
-            log.warn("SimpleDSORelationsConverterPlugin was unable to load "
-                    + "configuration to convert relation between "
-                    + "collections and communities.");
-        }
-        if (collection2item == null)
-        {
-            log.warn("SimpleDSORelationsConverterPlugin was unable to load "
-                    + "configuration to convert relation between "
-                    + "collections and items");
-        }
-        if (item2collection == null)
-        {
-            log.warn("SimpleDSORelationsConverterPlugin was unable to load "
-                    + "configuration to convert relation between "
-                    + "items and collections");
-        }
-        if (item2bitstream == null)
-        {
-            log.warn("SimpleDSORelationsConverterPlugin was unable to load "
-                    + "configuration to convert relation between "
-                    + "items and bitstreams.");
-        }
+        if (site2community == null) logConfigurationWarning("the repository (SITE) and the top communities.");
+        if (community2site == null) logConfigurationWarning("the top communities and the repository (SITE).");
+        if (community2subcommunity == null) logConfigurationWarning("communities and subcommunities.");
+        if (subcommunity2community == null) logConfigurationWarning("subcommunities and communities.");
+        if (community2collection == null) logConfigurationWarning("communities and collections.");
+        if (collection2community == null) logConfigurationWarning("collections and communities.");
+        if (collection2item == null) logConfigurationWarning("collections and items");
+        if (item2collection == null) logConfigurationWarning("items and collections");
+        if (item2bitstream == null) logConfigurationWarning("items and bitstreams.");
+    }
+
+    private void logConfigurationWarning(String between) {
+        log.warn(LOAD_WARNING_HEADER + between);
     }
     
     /**
@@ -592,18 +555,6 @@ implements ConverterPlugin
     @Override
     public boolean supports(int type)
     {
-        switch (type)
-        {
-            case (Constants.COLLECTION) :
-                return true;
-            case (Constants.COMMUNITY) :
-                return true;
-            case (Constants.ITEM) :
-                return true;
-            case (Constants.SITE) :
-                return true;
-            default :
-                return false;
-        }
+        return SUPPORTED.contains(type);
     }
 }

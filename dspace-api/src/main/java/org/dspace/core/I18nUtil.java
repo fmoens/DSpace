@@ -155,72 +155,44 @@ public class I18nUtil
     {
 
         Locale[] availableLocales = getSupportedLocales();
-        boolean isSupported = false;
         Locale supportedLocale = null;
-        String testLocale = "";
-        if (availableLocales == null)
-        {
-            supportedLocale = DEFAULTLOCALE;
-        }
-        else
+        if (availableLocales != null)
         {
             if (!locale.getVariant().equals(""))
             {
-                testLocale = locale.toString();
-                for (int i = 0; i < availableLocales.length; i++)
-                {
-                    if (testLocale.equalsIgnoreCase(availableLocales[i]
-                            .toString()))
-                    {
-                        isSupported = true;
-                        supportedLocale = availableLocales[i];
+                String testLocale = locale.toString();
+                for (Locale availableLocale : availableLocales) {
+                    if (testLocale.equalsIgnoreCase(availableLocale.toString())) {
+                        supportedLocale = availableLocale;
+                        break;
                     }
-
                 }
             }
 
-            if (!(isSupported && locale.getCountry().equals("")))
+            if (supportedLocale != null && !locale.getCountry().equals(""))
             {
-                testLocale = locale.getLanguage() + "_"
-                        + locale.getCountry();
-
-                for (int i = 0; i < availableLocales.length; i++)
-                {
-                    if (testLocale.equalsIgnoreCase(availableLocales[i]
-                            .toString()))
-                    {
-                        isSupported = true;
-                        supportedLocale = availableLocales[i];
+                String testLocale = locale.getLanguage() + "_" + locale.getCountry();
+                for (Locale availableLocale : availableLocales) {
+                    if (testLocale.equalsIgnoreCase(availableLocale.toString())) {
+                        supportedLocale = availableLocale;
+                        break;
+                    }
+                }
+            }
+            if (supportedLocale != null)
+            {
+                String testLocale = locale.getLanguage();
+                for (Locale availableLocale : availableLocales) {
+                    if (testLocale.equalsIgnoreCase(availableLocale.toString())) {
+                        supportedLocale = availableLocale;
+                        break;
                     }
                 }
 
-            }
-            if (!isSupported)
-            {
-                testLocale = locale.getLanguage();
-
-                for (int i = 0; i < availableLocales.length; i++)
-                {
-                    if (testLocale.equalsIgnoreCase(availableLocales[i]
-                            .toString()))
-                    {
-                        isSupported = true;
-                        supportedLocale = availableLocales[i];
-                    }
-
-                }
-            }
-            if (!isSupported)
-            {
-                supportedLocale = DEFAULTLOCALE;
             }
         }
-        return supportedLocale;
+        return supportedLocale != null ? supportedLocale : DEFAULTLOCALE;
     }
-
-
-
-
 
     /**
      * Get the appropriate localized version of input-forms.xml according to language settings
@@ -232,13 +204,11 @@ public class I18nUtil
     public static String getInputFormsFileName(Locale locale)
     {
         /** Name of the form definition XML file */
-        String fileName = "";
         final String FORM_DEF_FILE = "input-forms";
         final String FILE_TYPE = ".xml";
         String defsFilename = DSpaceServicesFactory.getInstance().getConfigurationService().getProperty("dspace.dir")
                 + File.separator + "config" + File.separator + FORM_DEF_FILE;
-        fileName =  getFilename(locale, defsFilename, FILE_TYPE);
-        return fileName;
+        return getFilename(locale, defsFilename, FILE_TYPE);
     }
     /**
      * Get the i18n message string for a given key and use the default Locale.
@@ -319,16 +289,13 @@ public class I18nUtil
     public static String getDefaultLicense(Context context)
     {
         Locale locale = context.getCurrentLocale();
-        String fileName = "";
         /** Name of the default license */
         final String DEF_LIC_FILE = "default";
         final String FILE_TYPE = ".license";
         String defsFilename = DSpaceServicesFactory.getInstance().getConfigurationService().getProperty("dspace.dir")
                 + File.separator + "config" + File.separator + DEF_LIC_FILE;
         
-        fileName = getFilename(locale, defsFilename, FILE_TYPE);
-        
-        return fileName;
+        return getFilename(locale, defsFilename, FILE_TYPE);
     }
     /**
      * Get the appropriate localized version of a file according to language settings
@@ -371,7 +338,7 @@ public class I18nUtil
                         + locale.getCountry() + "_" + locale.getVariant();
             }
         }
-
+        // Extract to method and then chain these fileFound checks
         if (fileNameLCV != null && !fileFound)
         {
             File fileTmp = new File(fileNameLCV + fileType);
@@ -382,6 +349,7 @@ public class I18nUtil
             }
         }
 
+        // Extract to method and then chain these fileFound checks
         if (fileNameLC != null && !fileFound)
         {
             File fileTmp = new File(fileNameLC + fileType);
@@ -392,6 +360,7 @@ public class I18nUtil
             }
         }
 
+        // Extract to method and then chain these fileFound checks
         if (fileNameL != null && !fileFound)
         {
             File fileTmp = new File(fileNameL + fileType);
@@ -422,13 +391,11 @@ public class I18nUtil
      */
     public static String getEmailFilename(Locale locale, String name)
     {
-        String templateName = "";
         String templateFile = DSpaceServicesFactory.getInstance().getConfigurationService().getProperty("dspace.dir")
                 + File.separator + "config" + File.separator + "emails"
                 + File.separator + name;
 
-        templateName = getFilename(locale, templateFile, "");
-        return templateName;
+        return getFilename(locale, templateFile, "");
     }
 
     /**
@@ -439,7 +406,7 @@ public class I18nUtil
      */
     public static Locale[] parseLocales(String[] locales)
     {
-        List<Locale> resultList = new ArrayList<Locale>();
+        List<Locale> resultList = new ArrayList<>();
         for (String ls : locales)
         {
             Locale lc = makeLocale(ls);

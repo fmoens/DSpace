@@ -39,7 +39,8 @@ public class NegotiationFilter implements Filter
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, 
+    // Method is too long, split it up
+    public void doFilter(ServletRequest request, ServletResponse response,
             FilterChain chain)
             throws IOException, ServletException
     {
@@ -90,7 +91,8 @@ public class NegotiationFilter implements Filter
         // and <stuff> may be further information.
         log.debug("PathInfo: " + path);
         if (path == null) path = "";
-        Pattern pathPattern = 
+        // Make this a constant
+        Pattern pathPattern =
                 Pattern.compile("^/*([^/]+)/+([^/]+)(?:/*||/+(.*))?$");
         Matcher pathMatcher = pathPattern.matcher(path);
         if (pathMatcher.matches())

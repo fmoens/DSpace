@@ -35,7 +35,8 @@ public class Negotiator {
     public static final String DEFAULT_LANG="html";
     
     private static final Logger log = Logger.getLogger(Negotiator.class);
-    
+
+    // Method is too long, split it up + refactor
     public static int negotiate(String acceptHeader)
     {
         if (acceptHeader == null) return UNSPECIFIED;
@@ -197,6 +198,7 @@ public class Negotiator {
         };
     }
 
+    // Method is too long, split it up + refactor
     public static boolean sendRedirect(HttpServletResponse response, String handle,
             String extraPathInfo, int serialization, boolean redirectHTML)
             throws IOException

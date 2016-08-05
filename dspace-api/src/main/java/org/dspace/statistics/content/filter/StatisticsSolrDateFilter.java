@@ -94,26 +94,12 @@ public class StatisticsSolrDateFilter implements StatisticsFilter {
 
             Calendar endCal = (Calendar) startCal.clone();
 
-            if (startDate == null)
-            {
-                if(startStr.startsWith("+"))
-                {
-                    startStr = startStr.substring(startStr.indexOf('+') + 1);
-                }
-
-                startCal.add(dateType, Integer.parseInt(startStr));
-                startDate = startCal.getTime();
+            if (startDate == null) {
+                startDate = extractDate(startStr, startCal, dateType);
             }
 
-            if (endDate == null)
-            {
-                if(endStr.startsWith("+"))
-                {
-                    endStr = endStr.substring(endStr.indexOf('+') + 1);
-                }
-
-                endCal.add(dateType, Integer.parseInt(endStr));
-                endDate = endCal.getTime();
+            if (endDate == null) {
+                endDate = extractDate(endStr, endCal, dateType);
             }
         }
 
@@ -124,5 +110,15 @@ public class StatisticsSolrDateFilter implements StatisticsFilter {
 
         //Create our string
         return "time:[" + startDateParsed + " TO " + endDateParsed + "]";
+    }
+
+    private Date extractDate(String str, Calendar calendar, int dateType) {
+        if(str.startsWith("+"))
+        {
+            startStr = startStr.substring(1);
+        }
+
+        calendar.add(dateType, Integer.parseInt(startStr));
+        return calendar.getTime();
     }
 }

@@ -35,11 +35,11 @@ public class Choice
 
     public Choice(String authority, String value, String label)
     {
-        this.authority = authority;
-        this.value = value;
-        this.label = label;
+        this(authority, label, value, null);
     }
 
+    // The signature should have been String authority, String value, String label, Map<String, String> extras:
+    // Why switch the order as compared to the other constructor?
     public Choice(String authority, String label, String value, Map<String, String> extras) {
         this.authority = authority;
         this.label = label;
